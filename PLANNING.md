@@ -10,6 +10,8 @@
 - [x] 确认项目以“协议先行、模块化单体、先跑闭环再增强”为核心工程原则
 - [x] 完成模块 0 `Shared Schema / Contract Layer` 的首版实现
 - [x] 为模块 0 补齐基础交付件：`README`、`schema.py`、`service.py`、`interfaces.py`、`config/`、`tests/`
+- [x] 完成模块 2 `Cleaning & Canonicalization` 的首版实现
+- [x] 为模块 2 补齐基础交付件：`README`、`schemas.py`、`service.py`、`interfaces.py`、`tests/`
 
 ### 进行中
 
@@ -18,7 +20,6 @@
 ### 未开始
 
 - [ ] 模块 1 `Source Ingestion`
-- [ ] 模块 2 `Cleaning & Canonicalization`
 - [ ] 模块 3 `Interview IE Extraction`
 - [ ] 模块 4 `Taxonomy & Entity Resolution`
 - [ ] 模块 5 `Global Knowledge Builder`
@@ -60,19 +61,58 @@
 - 当前只实现共享契约和通用校验，不提前耦合数据库、向量库、LLM SDK 或 Web 框架
 - 各模块后续可以继续沿用 `packages/<module_name>/` 的组织方式扩展
 
+### 模块 2 交付范围
+
+模块 2 当前已经提供以下能力：
+
+- 接收 `RawPost[]`，输出适合抽取使用的 `CleanedPost[]`
+- 完成首版规则化文本清洗：
+  - 文本标准化
+  - 噪声/广告行过滤
+  - 面试相关性初筛
+  - 语言检测
+  - 段落切分
+  - 基于规范化文本指纹的精确去重
+- 输出结构化结果对象，包含：
+  - `cleaned_posts`
+  - `dropped_post_ids`
+  - `dedup_primary_by_post_id`
+  - `warnings`
+  - `stats`
+
+### 模块 2 输入输出定义
+
+- 输入：`CleaningRequest`
+  - `raw_posts: list[RawPost]`
+  - `deduplicate: bool`
+  - `drop_irrelevant: bool`
+  - `min_relevance_score: float`
+- 输出：`CleaningResult`
+  - `cleaned_posts: list[CleanedPost]`
+  - `dropped_post_ids: list[str]`
+  - `dedup_primary_by_post_id: dict[str, str]`
+  - `warnings: list[str]`
+  - `stats: CleaningStats`
+
+### 模块 2 当前实现边界
+
+- 当前版本使用纯规则实现，不依赖数据库、向量库、LLM 或外部分类器
+- 去重为精确去重，不是语义去重
+- 相关性判断是规则初筛，后续仍可升级为轻量分类器或 LLM classifier
+- 该模块只负责清洗与初步标准化，不负责实体抽取、知识构建、检索或评分
+
 ## 推荐下一步
 
 ### Phase 1：最小训练闭环
 
 按照设计文档建议，优先推进以下模块：
 
-1. `模块 2 Cleaning`
-2. `模块 3 Extraction`
-3. `模块 5 Knowledge Builder`
-4. `模块 7 User Modeling`
-5. `模块 8 Assessment`
-6. `模块 9 Planning`
-7. `模块 10 Orchestrator`
+1. `模块 3 Extraction`
+2. `模块 5 Knowledge Builder`
+3. `模块 7 User Modeling`
+4. `模块 8 Assessment`
+5. `模块 9 Planning`
+6. `模块 10 Orchestrator`
 
 目标是先跑通：
 
@@ -80,10 +120,10 @@
 
 ### 最值得立刻实现的内容
 
-1. 模块 2：把 `RawPost -> CleanedPost` 跑通，先用规则清洗与分段。
-2. 模块 3：把 `CleanedPost -> InterviewEvent` 跑通，哪怕先做弱抽取版本。
-3. 模块 5 + 9：先做基于规则和频次的 question-level 出题。
-4. 模块 8 + 7：完成评分回写和用户技能状态更新，形成最小闭环。
+1. 模块 3：把 `CleanedPost -> InterviewEvent` 跑通，先做弱抽取版本。
+2. 模块 5 + 9：先做基于规则和频次的 question-level 出题。
+3. 模块 8 + 7：完成评分回写和用户技能状态更新，形成最小闭环。
+4. 模块 1：补一个最小手工导入入口，把样本导入正式接到模块 2 前面。
 
 ## 风险与注意事项
 

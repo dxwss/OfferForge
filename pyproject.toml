@@ -1,0 +1,9 @@
+[project]
+name = "offerforge"
+version = "0.1.0"
+description = "OfferForge modular monolith skeleton for AI-assisted coding."
+readme = "PLANNING.md"
+requires-python = ">=3.9"
+
+[tool.unittest]
+start-directory = "packages"
